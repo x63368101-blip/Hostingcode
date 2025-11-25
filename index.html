@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- ตั้งค่าพื้นฐาน --- */
+        body {
+            margin: 0; padding: 0; font-family: 'Kanit', sans-serif;
+            background-color: #0f0500; /* พื้นหลังสีดำเข้ม */
+            display: flex; justify-content: center;
+            align-items: center; 
+            min-height: 100vh; /* ใช้ min-height แทน height เพื่อให้ยืดหยุ่น */
+            /* overflow: hidden; **นำออกเพื่อไม่ให้ซ่อนเนื้อหาที่อาจเกินขอบ** */
+        }
+
+        /* กรอบหลัก */
+        .container {
+            width: 600px; 
+            max-width: 100%; 
+            /* height: 450px; **เปลี่ยนเป็น height: auto และเพิ่ม min-height แทน** */
+            height: auto; /* **ปรับความสูงเป็น auto เพื่อให้คลุมเนื้อหาทั้งหมด** */
+            min-height: 450px; /* **กำหนดความสูงขั้นต่ำไว้ที่ 450px** */
+            box-sizing: border-box;
+            padding: 15px; 
+            padding-bottom: 15px; /* **เพิ่ม padding ด้านล่างให้ชัดเจน** */
+            background: radial-gradient(circle at center, #1a0d00, #000000);
+            border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; justify-content: space-between; 
+        }
+
+        /* --- แถวบนสุด (3 กล่อง) --- */
+        .top-stats { display: flex; justify-content: space-between; gap: 10px; } 
+
+        .stat-card {
+            background-color: #000; border: 1px solid #b87b18; border-radius: 8px;
+            padding: 8px 5px; text-align: center; flex: 1; color: #fff; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px rgba(184, 123, 24, 0.1);
+        }
+
+        /* --- 1. Flash Effect CSS --- */
+        .flash-active { animation: border-flash 0.3s ease-out; }
+
+        @keyframes border-flash {
+            0% { border-color: #fff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); }
+            100% { border-color: #b87b18; box-shadow: 0 0 10px rgba(184, 123, 24, 0.1); }
+        }
+
+        .icon { font-size: 16px; margin-bottom: 3px; }
+        
+        /* --- 2. Pulse Effect CSS --- */
+        .icon-dot {
+            width: 10px; height: 10px; background-color: #ff9900; border-radius: 50%;
+            display: inline-block; box-shadow: 0 0 5px #ff9900; margin-bottom: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.7); }
+            70% { box-shadow: 0 0 0 5px rgba(255, 153, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0); }
+        }
+
+        .stat-number { font-size: 16px; font-weight: 700; margin-bottom: 2px; line-height: 1.2; font-variant-numeric: tabular-nums; } 
+        .stat-label { font-size: 11px; color: #ccc; font-weight: 300; }
+
+        /* --- ส่วนแจ็คพอต (ตรงกลาง) --- */
+        .jackpot-section { 
+            text-align: center; flex-grow: 1; display: flex; 
+            flex-direction: column; justify-content: center; padding: 5px 0; 
+        }
+        .jackpot-title { font-size: 24px; font-weight: 700; color: #ffaa00; text-shadow: 0 0 8px rgba(255, 170, 0, 0.6); margin-bottom: 10px; margin-top: 0; } 
+
+        .jackpot-banner {
+            height: 220px; 
+            background: linear-gradient(135deg, #6e460e 0%, #d69d36 50%, #6e460e 100%);
+            border-radius: 15px; color: #fff; position: relative;
+            overflow: hidden; box-shadow: 0 3px 10px rgba(214, 157, 54, 0.2);
+            border: 1px solid #d69d36;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            padding: 0 20px; 
+        }
+        
+        /* --- 3. Pure CSS Coin Effect CSS --- */
+        .coin-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; overflow: hidden; z-index: 5;
+        }
+
+        .coin { position: absolute; font-size: 16px; z-index: 10; }
+
+        .coin::before {
+            content: '₿'; display: block; background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%; width: 25px; height: 25px; line-height: 25px; text-align: center; 
+            color: #444; font-size: 14px; font-weight: 700;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5) inset, 0 0 5px rgba(0, 0, 0, 0.5);
+            filter: drop-shadow(0 0 3px rgba(255, 170, 0, 0.9));
+        }
+        /* ปรับตำแหน่ง Coin Animation: ครึ่งความสูงของแบนเนอร์ 220px คือ 110px */
+        @keyframes collect-path {
+            0% { opacity: 1; transform: translate(var(--start-x), var(--start-y)) scale(0.8); }
+            70% { opacity: 1; transform: translate(var(--mid-x), var(--mid-y)) scale(1.2); }
+            100% { 
+                opacity: 0; 
+                transform: translate(285px, 110px) scale(0.5); 
+            }
+        }
+        
+        /* ปรับการตั้งค่าตำแหน่งเหรียญเล็กน้อยเนื่องจากความสูงที่ลดลง */
+        .coin:nth-child(1) { --start-x: 100px; --start-y: 40px; --mid-x: 180px; --mid-y: 80px; animation: collect-path 1.2s ease-out infinite; animation-delay: 0s; }
+        .coin:nth-child(2) { --start-x: 450px; --start-y: 40px; --mid-x: 380px; --mid-y: 80px; animation: collect-path 1.2s ease-out infinite; animation-delay: 0.2s; }
+        .coin:nth-child(3) { --start-x: 80px; --start-y: 180px; --mid-x: 150px; --mid-y: 160px; animation: collect-path 1.2s ease-out infinite; animation-delay: 0.4s; }
+        .coin:nth-child(4) { --start-x: 470px; --start-y: 180px; --mid-x: 400px; --mid-y: 160px; animation: collect-path 1.2s ease-out infinite; animation-delay: 0.6s; }
+        .coin:nth-child(5) { --start-x: 285px; --start-y: 40px; --mid-x: 285px; --mid-y: 100px; animation: collect-path 1.2s ease-out infinite; animation-delay: 0.8s; }
+        
+        .coin-bg { position: absolute; font-size: 80px; color: rgba(255, 255, 255, 0.25); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 0; } 
+        
+        .jackpot-label { 
+            position: relative; z-index: 1; font-size: 18px; font-weight: 500; 
+            opacity: 0.9; margin-bottom: 5px; 
+        }
+        
+        .jackpot-value { 
+            position: relative; z-index: 1; font-size: 60px; font-weight: 700; 
+            color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 15px #ffaa00; 
+            line-height: 1.1; 
+        }
+
+        /* --- แถวล่างสุด (2 กล่องขาว) --- */
+        .bottom-stats { display: flex; gap: 15px; margin-top: auto; padding-top: 5px; } /* **เพิ่ม margin-top: auto เพื่อผลักไปด้านล่างสุด** */
+        .white-card { 
+            background-color: #f5f5f5; border-radius: 12px; flex: 1; padding: 10px; 
+            text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+        }
+        .bottom-label { color: #ff8c00; font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .bottom-value { color: #222; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; } 
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="top-stats">
+            <div class="stat-card" id="card-online">
+                <span class="icon-dot"></span>
+                <div class="stat-number" id="online-counter">716,549</div>
+                <div class="stat-label">ออนไลน์</div>
+            </div>
+            <div class="stat-card" id="card-winner">
+                <div class="icon">🏆</div>
+                <div class="stat-number" id="winner-counter">544,198</div>
+                <div class="stat-label">ผู้ชนะวันนี้</div>
+            </div>
+            <div class="stat-card" id="card-reward">
+                <div class="icon">💰</div>
+                <div class="stat-number" id="reward-counter">42,231,125</div>
+                <div class="stat-label">รางวัลวันนี้</div>
+            </div>
+        </div>
+
+        <div class="jackpot-section">
+            <div class="jackpot-title">แจ็คพอตรวม</div>
+            <div class="jackpot-banner" id="card-jackpot"> 
+                
+                <div class="coin-container">
+                    <div class="coin"></div> 
+                    <div class="coin"></div>
+                    <div class="coin"></div>
+                    <div class="coin"></div>
+                    <div class="coin"></div>
+                </div>
+                <div class="coin-bg">₿</div> 
+                <div class="jackpot-label">มูลค่ารางวัล</div>
+                <div class="jackpot-value" id="jackpot-counter">12,000,789</div>
+            </div>
+        </div>
+
+        <div class="bottom-stats">
+            <div class="white-card" id="card-latest-winner">
+                <div class="bottom-label">ผู้ชนะล่าสุด</div>
+                <div class="bottom-value" id="latest-winner-counter">642</div>
+            </div>
+            <div class="white-card" id="card-max-reward">
+                <div class="bottom-label">รางวัลสูงสุด</div>
+                <div class="bottom-value" id="max-reward-counter">770,009</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ฟังก์ชันสำหรับทำให้ขอบกระพริบ (Flash Effect)
+        function triggerFlash(elementId) {
+            const card = document.getElementById(elementId);
+            if (!card) return;
+            
+            card.classList.remove('flash-active');
+            // ใช้ void card.offsetWidth เพื่อบังคับให้ Reflow และเริ่ม Animation ใหม่
+            void card.offsetWidth; 
+            card.classList.add('flash-active');
+            
+            // ใช้ setTimeout ตามระยะเวลา animation (0.3s) เพื่อลบคลาสออก 
+            // ทำให้สามารถกระพริบซ้ำได้
+            setTimeout(() => {
+                card.classList.remove('flash-active');
+            }, 300);
+        }
+
+        // --- JavaScript Counters (สั่งงานตัวเลขวิ่งและ Flash) ---
+        
+        // 1. ออนไลน์ (เปลี่ยนทุก 1 วินาที)
+        let currentOnline = 716549;
+        const maxOnline = 990017;
+        const minOnline = 716549;
+        const onlineElement = document.getElementById('online-counter');
+
+        function updateOnline() {
+            const increment = Math.floor(Math.random() * 300) + 50; 
+            currentOnline += increment;
+            if (currentOnline >= maxOnline) currentOnline = minOnline;
+            onlineElement.innerText = currentOnline.toLocaleString('en-US');
+            triggerFlash('card-online');
+        }
+        setInterval(updateOnline, 1000);
+
+        // 2. ผู้ชนะวันนี้ (เปลี่ยนทุก 1 วินาที)
+        let currentWinner = 544198;
+        const maxWinner = 618440; 
+        const minWinner = 544198;
+        const winnerElement = document.getElementById('winner-counter');
+
+        function updateWinner() {
+            const increment = Math.floor(Math.random() * 50) + 1; 
+            currentWinner += increment;
+            if (currentWinner >= maxWinner) currentWinner = minWinner;
+            winnerElement.innerText = currentWinner.toLocaleString('en-US');
+            triggerFlash('card-winner');
+        }
+        setInterval(updateWinner, 1000);
+
+        // 3. รางวัลวันนี้ (เปลี่ยนทุก 0.5 วินาที)
+        let currentReward = 42231125;
+        const maxReward = 52231125;
+        const minReward = 42231125;
+        const rewardElement = document.getElementById('reward-counter');
+
+        function updateReward() {
+            const increment = Math.floor(Math.random() * 4500) + 500; 
+            currentReward += increment;
+            if (currentReward >= maxReward) currentReward = minReward;
+            rewardElement.innerText = currentReward.toLocaleString('en-US');
+            triggerFlash('card-reward');
+        }
+        setInterval(updateReward, 500);
+
+        // 4. มูลค่ารางวัล (Jackpot) (เปลี่ยนทุก 0.5 วินาที)
+        let currentJackpot = 12000789;
+        const maxJackpot = 22000789;
+        const minJackpot = 12000789;
+        const jackpotElement = document.getElementById('jackpot-counter');
+
+        function updateJackpot() {
+            const increment = Math.floor(Math.random() * 8000) + 1000; 
+            currentJackpot += increment;
+            if (currentJackpot >= maxJackpot) {
+                currentJackpot = minJackpot;
+            }
+            jackpotElement.innerText = currentJackpot.toLocaleString('en-US');
+            // ไม่มีการเรียก triggerFlash ในส่วนนี้ตามโค้ดต้นฉบับที่คอมเมนต์ไว้
+        }
+        setInterval(updateJackpot, 500);
+
+        // 5. ผู้ชนะล่าสุด (เปลี่ยนทุก 0.5 วินาที) 
+        const minLatestWinner = 333; 
+        const maxLatestWinner = 789; 
+        
+        // Initial value 
+        let currentLatestWinner = Math.floor(Math.random() * (maxLatestWinner - minLatestWinner + 1)) + minLatestWinner;
+        const latestWinnerElement = document.getElementById('latest-winner-counter');
+        latestWinnerElement.innerText = currentLatestWinner.toLocaleString('en-US'); 
+
+        function updateLatestWinner() {
+            const nextLatestWinner = Math.floor(Math.random() * (maxLatestWinner - minLatestWinner + 1)) + minLatestWinner;
+            currentLatestWinner = nextLatestWinner; 
+            latestWinnerElement.innerText = currentLatestWinner.toLocaleString('en-US');
+            // ไม่มีการเรียก triggerFlash ในส่วนนี้ตามโค้ดต้นฉบับที่คอมเมนต์ไว้
+        }
+        setInterval(updateLatestWinner, 500);
+
+        // 6. รางวัลสูงสุด (เปลี่ยนทุก 0.5 วินาที)
+        const minMaxReward = 789456; 
+        const maxMaxReward = 1730789; 
+        
+        // Initial value 
+        let currentMaxReward = Math.floor(Math.random() * (maxMaxReward - minMaxReward + 1)) + minMaxReward;
+        const maxRewardElement = document.getElementById('max-reward-counter');
+        maxRewardElement.innerText = currentMaxReward.toLocaleString('en-US'); 
+
+        function updateMaxReward() {
+            const nextMaxReward = Math.floor(Math.random() * (maxMaxReward - minMaxReward + 1)) + minMaxReward;
+            currentMaxReward = nextMaxReward; 
+            maxRewardElement.innerText = currentMaxReward.toLocaleString('en-US');
+            // ไม่มีการเรียก triggerFlash ในส่วนนี้ตามโค้ดต้นฉบับที่คอมเมนต์ไว้
+        }
+        setInterval(updateMaxReward, 500);
+
+    </script>
+    </body>
+</html>
